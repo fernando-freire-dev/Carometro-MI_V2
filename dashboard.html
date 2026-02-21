@@ -105,6 +105,11 @@
   const selectTurma = document.getElementById("filtroTurma");
   const campoBusca = document.getElementById("buscaNome");
   
+  // Atualiza ao mudar ensino ou turma
+  selectEnsino.addEventListener("change", carregarAlunos);
+  selectTurma.addEventListener("change", carregarAlunos);
+  
+  // Busca em tempo real com debounce
   let timeoutBusca;
   
   campoBusca.addEventListener("input", () => {
@@ -249,6 +254,7 @@
 
 </body>
 </html>
+
 
 
 
