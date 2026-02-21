@@ -7,31 +7,27 @@
 <body>
 
   <h2>Painel do Sistema Escolar</h2>
-  <button onclick="logout()">Sair</button>
+  <button id="btnLogout">Sair</button>
 
-  <div id="conteudo"></div>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const supabase = window.supabase.createClient(
+    const supabase = createClient(
       "https://ktokzupvbzgvrlmukyow.supabase.co",
       "sb_publishable_cIHQLm1L_KAvvf1CrENu0w_QdgyNVjO"
     );
 
-    async function verificarLogin() {
-      const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session) {
-        window.location.href = "index.html";
-      }
-    }
-
-    async function logout() {
-      await supabase.auth.signOut();
+    if (!session) {
       window.location.href = "index.html";
     }
 
-    verificarLogin();
+    document.getElementById("btnLogout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
+    });
+
   </script>
 
 </body>
