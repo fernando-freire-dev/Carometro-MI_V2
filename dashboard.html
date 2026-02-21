@@ -297,32 +297,45 @@
   const listaTurmas = turmas[ensino];
 
   if (!listaTurmas) {
-    alert("Não há turmas disponíveis para este ensino.");
+    alert("Não há turmas disponíveis.");
     return;
   }
 
-  const novaTurma = prompt(
-    `Turmas disponíveis:\n\n${listaTurmas.join(" - ")}\n\nDigite a nova turma para o aluno "${nome}":`
+  // Criar select dinamicamente
+  const select = document.createElement("select");
+
+  listaTurmas.forEach(t => {
+    const option = document.createElement("option");
+    option.value = t;
+    option.textContent = t;
+    if (t === turmaAtual) option.selected = true;
+    select.appendChild(option);
+  });
+
+  // Criar container
+  const container = document.createElement("div");
+  container.appendChild(select);
+
+  const confirmarSelecao = confirm(
+    `Selecione a nova turma no campo abaixo.\n\n` +
+    `Depois clique em OK para continuar.`
   );
 
-  if (!novaTurma) return;
+  if (!confirmarSelecao) return;
 
-  if (!listaTurmas.includes(novaTurma)) {
-    alert("Turma inválida!");
-    return;
-  }
+  const novaTurma = select.value;
 
   if (novaTurma === turmaAtual) {
     alert("O aluno já está nessa turma.");
     return;
   }
 
-  const confirmar = confirm(
+  const confirmarFinal = confirm(
     `Você deseja alterar o aluno "${nome}"\n` +
     `da turma "${turmaAtual}" para "${novaTurma}"?`
   );
 
-  if (!confirmar) return;
+  if (!confirmarFinal) return;
 
   const { error } = await supabase
     .from("alunos")
@@ -345,6 +358,7 @@
 
 </body>
 </html>
+
 
 
 
