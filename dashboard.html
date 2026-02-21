@@ -132,6 +132,19 @@
 
   document.getElementById("btnFiltrar").addEventListener("click", carregarAlunos);
 
+  window.gerarOptionsTurma = function(ensino, turmaAtual) {
+
+      if (!turmas[ensino]) return "";
+    
+      return turmas[ensino]
+        .map(t => `
+          <option value="${t}" ${t === turmaAtual ? "selected" : ""}>
+            ${t}
+          </option>
+        `)
+        .join("");
+    }
+
   async function carregarAlunos() {
     
     let query = supabase
@@ -191,7 +204,11 @@
           <td>${aluno.ra}</td>
           <td>${aluno.nome}</td>
           <td>${aluno.ensino}</td>
-          <td>${aluno.turma}</td>
+          <td>
+            <select onchange="confirmarMudancaTurma('${aluno.ra}', '${aluno.nome}', '${aluno.turma}', this.value)">
+              ${gerarOptionsTurma(aluno.ensino, aluno.turma)}
+            </select>
+          </td>
           <td class="${aluno.status === 'ativo' ? 'ativo' : 'inativo'}">
             ${aluno.status}
           </td>
@@ -247,6 +264,34 @@
     }
   }
 
+  window.confirmarMudancaTurma = async function(ra, nome, turmaAtual, novaTurma) {
+
+        if (turmaAtual === novaTurma) return;
+      
+        const confirmar = confirm(
+          `Você deseja alterar o aluno "${nome}"\n` +
+          `da turma "${turmaAtual}" para "${novaTurma}"?`
+        );
+      
+        if (!confirmar) {
+          carregarAlunos(); // volta visualmente ao original
+          return;
+        }
+      
+        const { error } = await supabase
+          .from("alunos")
+          .update({ turma: novaTurma })
+          .eq("ra", ra);
+      
+        if (error) {
+          alert("Erro ao atualizar turma");
+          console.error(error);
+        } else {
+          alert("Turma alterada com sucesso!");
+          carregarAlunos();
+        }
+      }
+
   // Carrega automaticamente ao abrir
   carregarAlunos();
 
@@ -254,6 +299,7 @@
 
 </body>
 </html>
+
 
 
 
