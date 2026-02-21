@@ -56,6 +56,9 @@
 
 <h3>Filtrar</h3>
 
+//Busca por nome
+<input type="text" id="buscaNome" placeholder="Buscar por nome ou RA">
+
 <select id="filtroEnsino">
   <option value="">Todos os Ensinos</option>
   <option value="Fundamental">Fundamental</option>
@@ -112,11 +115,13 @@
   document.getElementById("btnFiltrar").addEventListener("click", carregarAlunos);
 
   async function carregarAlunos() {
-
+    
     let query = supabase
       .from("alunos")
       .select("*")
       .order("nome", { ascending: true });
+
+    const busca = document.getElementById("buscaNome").value.trim();
 
     if (selectEnsino.value) {
       query = query.eq("ensino", selectEnsino.value);
@@ -124,6 +129,10 @@
 
     if (selectTurma.value) {
       query = query.eq("turma", selectTurma.value);
+    }
+
+    if (busca) {
+      query = query.or(`nome.ilike.%${busca}%,ra.ilike.%${busca}%`);
     }
 
     const { data, error } = await query;
@@ -227,4 +236,5 @@
 
 </body>
 </html>
+
 
