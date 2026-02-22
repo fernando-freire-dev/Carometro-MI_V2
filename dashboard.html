@@ -105,259 +105,352 @@ select, input {
   border: 1px solid #ddd;
   margin-right: 8px;
 }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  width: 320px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.modal h3 {
+  margin-top: 0;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@keyframes fadeIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+  
 </style>
 </head>
 
 <body>
-<div class="container">
-
-<h2>Painel do Sistema Escolar</h2>
-<button id="btnLogout" class="btn-primary">Sair</button>
-
-<h3>Filtrar</h3>
-
-<select id="filtroEnsino">
-  <option value="">Todos os Ensinos</option>
-  <option value="Fundamental">Fundamental</option>
-  <option value="Médio">Médio</option>
-</select>
-
-<select id="filtroTurma">
-  <option value="">Todas as Turmas</option>
-</select>
-
-<input type="text" id="buscaNome" placeholder="Buscar por nome ou RA">
-
-<div id="tabelaAlunos"></div>
-
-<script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const supabase = createClient(
-  "https://ktokzupvbzgvrlmukyow.supabase.co",
-  "sb_publishable_cIHQLm1L_KAvvf1CrENu0w_QdgyNVjO"
-);
-
-// 🔐 Verificar login
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) window.location.href = "index.html";
-
-document.getElementById("btnLogout").addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  window.location.href = "index.html";
-});
-
-// 🎓 Turmas
-const turmas = {
-  "Fundamental": ["6ºA","6ºB","6ºC","7ºA","7ºB","7ºC","8ºA","8ºB","9ºA","9ºB","9ºC"],
-  "Médio": ["1ºA","1ºB","1ºC","2ºA","2ºB","2ºC","3ºA","3ºB","3ºC"]
-};
-
-const selectEnsino = document.getElementById("filtroEnsino");
-const selectTurma = document.getElementById("filtroTurma");
-const campoBusca = document.getElementById("buscaNome");
-
-selectEnsino.addEventListener("change", () => {
-  selectTurma.innerHTML = '<option value="">Todas as Turmas</option>';
-  if (turmas[selectEnsino.value]) {
-    turmas[selectEnsino.value].forEach(turma => {
-      selectTurma.innerHTML += `<option value="${turma}">${turma}</option>`;
-    });
-  }
-  carregarAlunos();
-});
-
-selectTurma.addEventListener("change", carregarAlunos);
-
-let timeoutBusca;
-campoBusca.addEventListener("input", () => {
-  clearTimeout(timeoutBusca);
-  timeoutBusca = setTimeout(() => carregarAlunos(), 300);
-});
-
-async function carregarAlunos() {
-
-  let query = supabase
-    .from("alunos")
-    .select("*")
-    .order("nome", { ascending: true });
-
-  if (selectEnsino.value)
-    query = query.eq("ensino", selectEnsino.value);
-
-  if (selectTurma.value)
-    query = query.eq("turma", selectTurma.value);
-
-  if (campoBusca.value.trim())
-    query = query.or(`nome.ilike.%${campoBusca.value.trim()}%,ra.ilike.%${campoBusca.value.trim()}%`);
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  let html = `
-  <table>
-    <tr>
-      <th>Foto</th>
-      <th>RA</th>
-      <th>Nome</th>
-      <th>Ensino</th>
-      <th>Turma</th>
-      <th>Status</th>
-      <th>Ação</th>
-    </tr>
-  `;
-
-  data.forEach(aluno => {
-
-    const statusNormalizado = aluno.status.toLowerCase();
-
-    const { data: fotoData } = supabase
-      .storage
-      .from('fotos-alunos')
-      .getPublicUrl(`${aluno.ra}.jpg`);
-
-    const fotoUrl = fotoData.publicUrl + '?t=' + new Date().getTime();
-
-    html += `
-    <tr>
-      <td>
-        <img src="${fotoUrl}" onerror="this.src='https://via.placeholder.com/60'">
-      </td>
-      <td>${aluno.ra}</td>
-      <td>${aluno.nome}</td>
-      <td>${aluno.ensino}</td>
-      <td>${aluno.turma}</td>
-      <td>
-        <span class="badge ${statusNormalizado === 'ativo' ? 'badge-ativo' : 'badge-inativo'}">
-          ${aluno.status}
-        </span>
-      </td>
-      <td>
-        <div class="acoes">
-
-          <button 
-            class="btn-sm ${statusNormalizado === 'ativo' ? 'btn-danger' : 'btn-success'} btn-status"
-            data-ra="${aluno.ra}"
-            data-status="${aluno.status}">
-            ${statusNormalizado === 'ativo' ? 'Inativar' : 'Ativar'}
-          </button>
-
-          <button 
-            class="btn-sm btn-warning btn-turma"
-            data-ra="${aluno.ra}"
-            data-nome="${aluno.nome}"
-            data-ensino="${aluno.ensino}"
-            data-turma="${aluno.turma}">
-            Alterar Turma
-          </button>
-
-          <label class="btn-sm btn-info" style="cursor:pointer;">
-            Foto
-            <input type="file" accept="image/*"
-              style="display:none;"
-              onchange="uploadFoto(event, '${aluno.ra}')">
-          </label>
-
-        </div>
-      </td>
-    </tr>
-    `;
-  });
-
-  html += "</table>";
-  document.getElementById("tabelaAlunos").innerHTML = html;
-
-  // Eventos status
-  document.querySelectorAll(".btn-status").forEach(btn => {
-    btn.addEventListener("click", () => {
-      alterarStatus(btn.dataset.ra, btn.dataset.status);
-    });
-  });
-
-  // Eventos turma
-  document.querySelectorAll(".btn-turma").forEach(btn => {
-    btn.addEventListener("click", () => {
-      iniciarMudancaTurma(
-        btn.dataset.ra,
-        btn.dataset.nome,
-        btn.dataset.ensino,
-        btn.dataset.turma
+  <div class="container">
+  
+      <h2>Painel do Sistema Escolar</h2>
+      <button id="btnLogout" class="btn-primary">Sair</button>
+      
+      <h3>Filtrar</h3>
+      
+      <select id="filtroEnsino">
+        <option value="">Todos os Ensinos</option>
+        <option value="Fundamental">Fundamental</option>
+        <option value="Médio">Médio</option>
+      </select>
+      
+      <select id="filtroTurma">
+        <option value="">Todas as Turmas</option>
+      </select>
+      
+      <input type="text" id="buscaNome" placeholder="Buscar por nome ou RA">
+      
+      <div id="tabelaAlunos"></div>
+      
+      <script type="module">
+      import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+      
+      const supabase = createClient(
+        "https://ktokzupvbzgvrlmukyow.supabase.co",
+        "sb_publishable_cIHQLm1L_KAvvf1CrENu0w_QdgyNVjO"
       );
-    });
-  });
-}
+      
+      // 🔐 Verificar login
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) window.location.href = "index.html";
+      
+      document.getElementById("btnLogout").addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        window.location.href = "index.html";
+      });
+      
+      // 🎓 Turmas
+      const turmas = {
+        "Fundamental": ["6ºA","6ºB","6ºC","7ºA","7ºB","7ºC","8ºA","8ºB","9ºA","9ºB","9ºC"],
+        "Médio": ["1ºA","1ºB","1ºC","2ºA","2ºB","2ºC","3ºA","3ºB","3ºC"]
+      };
+      
+      const selectEnsino = document.getElementById("filtroEnsino");
+      const selectTurma = document.getElementById("filtroTurma");
+      const campoBusca = document.getElementById("buscaNome");
+      
+      selectEnsino.addEventListener("change", () => {
+        selectTurma.innerHTML = '<option value="">Todas as Turmas</option>';
+        if (turmas[selectEnsino.value]) {
+          turmas[selectEnsino.value].forEach(turma => {
+            selectTurma.innerHTML += `<option value="${turma}">${turma}</option>`;
+          });
+        }
+        carregarAlunos();
+      });
+      
+      selectTurma.addEventListener("change", carregarAlunos);
+      
+      let timeoutBusca;
+      campoBusca.addEventListener("input", () => {
+        clearTimeout(timeoutBusca);
+        timeoutBusca = setTimeout(() => carregarAlunos(), 300);
+      });
+      
+      async function carregarAlunos() {
+      
+        let query = supabase
+          .from("alunos")
+          .select("*")
+          .order("nome", { ascending: true });
+      
+        if (selectEnsino.value)
+          query = query.eq("ensino", selectEnsino.value);
+      
+        if (selectTurma.value)
+          query = query.eq("turma", selectTurma.value);
+      
+        if (campoBusca.value.trim())
+          query = query.or(`nome.ilike.%${campoBusca.value.trim()}%,ra.ilike.%${campoBusca.value.trim()}%`);
+      
+        const { data, error } = await query;
+      
+        if (error) {
+          console.error(error);
+          return;
+        }
+      
+        let html = `
+        <table>
+          <tr>
+            <th>Foto</th>
+            <th>RA</th>
+            <th>Nome</th>
+            <th>Ensino</th>
+            <th>Turma</th>
+            <th>Status</th>
+            <th>Ação</th>
+          </tr>
+        `;
+      
+        data.forEach(aluno => {
+      
+          const statusNormalizado = aluno.status.toLowerCase();
+      
+          const { data: fotoData } = supabase
+            .storage
+            .from('fotos-alunos')
+            .getPublicUrl(`${aluno.ra}.jpg`);
+      
+          const fotoUrl = fotoData.publicUrl + '?t=' + new Date().getTime();
+      
+          html += `
+          <tr>
+            <td>
+              <img src="${fotoUrl}" onerror="this.src='https://via.placeholder.com/60'">
+            </td>
+            <td>${aluno.ra}</td>
+            <td>${aluno.nome}</td>
+            <td>${aluno.ensino}</td>
+            <td>${aluno.turma}</td>
+            <td>
+              <span class="badge ${statusNormalizado === 'ativo' ? 'badge-ativo' : 'badge-inativo'}">
+                ${aluno.status}
+              </span>
+            </td>
+            <td>
+              <div class="acoes">
+      
+                <button 
+                  class="btn-sm ${statusNormalizado === 'ativo' ? 'btn-danger' : 'btn-success'} btn-status"
+                  data-ra="${aluno.ra}"
+                  data-status="${aluno.status}">
+                  ${statusNormalizado === 'ativo' ? 'Inativar' : 'Ativar'}
+                </button>
+      
+                <button 
+                  class="btn-sm btn-warning btn-turma"
+                  data-ra="${aluno.ra}"
+                  data-nome="${aluno.nome}"
+                  data-ensino="${aluno.ensino}"
+                  data-turma="${aluno.turma}">
+                  Alterar Turma
+                </button>
+      
+                <label class="btn-sm btn-info" style="cursor:pointer;">
+                  Foto
+                  <input type="file" accept="image/*"
+                    style="display:none;"
+                    onchange="uploadFoto(event, '${aluno.ra}')">
+                </label>
+      
+              </div>
+            </td>
+          </tr>
+          `;
+        });
+      
+        html += "</table>";
+        document.getElementById("tabelaAlunos").innerHTML = html;
+      
+        // Eventos status
+        document.querySelectorAll(".btn-status").forEach(btn => {
+          btn.addEventListener("click", () => {
+            alterarStatus(btn.dataset.ra, btn.dataset.status);
+          });
+        });
+      
+        // Eventos turma
+        document.querySelectorAll(".btn-turma").forEach(btn => {
+          btn.addEventListener("click", () => {
+            iniciarMudancaTurma(
+              btn.dataset.ra,
+              btn.dataset.nome,
+              btn.dataset.ensino,
+              btn.dataset.turma
+            );
+          });
+        });
+      }
+      
+      async function alterarStatus(ra, statusAtual) {
+      
+        const statusNormalizado = statusAtual.toLowerCase();
+        const novoStatus = statusNormalizado === "ativo" ? "Inativo" : "Ativo";
+      
+        const { error } = await supabase
+          .from("alunos")
+          .update({ status: novoStatus })
+          .eq("ra", ra);
+      
+        if (error) {
+          alert("Erro ao atualizar status");
+          console.error(error);
+        } else {
+          carregarAlunos();
+        }
+      }
+      
+      let alunoSelecionado = null;
 
-async function alterarStatus(ra, statusAtual) {
+      async function iniciarMudancaTurma(ra, nome, ensino, turmaAtual) {
+      
+        const listaTurmas = turmas[ensino];
+        if (!listaTurmas) return;
+      
+        alunoSelecionado = { ra, nome, turmaAtual };
+      
+        const modal = document.getElementById("modalTurma");
+        const info = document.getElementById("modalInfo");
+        const select = document.getElementById("selectNovaTurma");
+      
+        info.innerHTML = `
+          <strong>${nome}</strong><br>
+          Turma atual: ${turmaAtual}
+        `;
+      
+        select.innerHTML = "";
+      
+        listaTurmas.forEach(turma => {
+          const option = document.createElement("option");
+          option.value = turma;
+          option.textContent = turma;
+          if (turma === turmaAtual) option.selected = true;
+          select.appendChild(option);
+        });
+      
+        modal.style.display = "flex";
+      }
+      
+      window.uploadFoto = async function(event, ra) {
+        const file = event.target.files[0];
+        if (!file) return;
+      
+        const { error } = await supabase.storage
+          .from('fotos-alunos')
+          .upload(`${ra}.jpg`, file, { upsert: true });
+      
+        if (error) {
+          alert("Erro ao enviar foto");
+        } else {
+          carregarAlunos();
+        }
+      }
 
-  const statusNormalizado = statusAtual.toLowerCase();
-  const novoStatus = statusNormalizado === "ativo" ? "Inativo" : "Ativo";
-
-  const { error } = await supabase
-    .from("alunos")
-    .update({ status: novoStatus })
-    .eq("ra", ra);
-
-  if (error) {
-    alert("Erro ao atualizar status");
-    console.error(error);
-  } else {
-    carregarAlunos();
-  }
-}
-
-async function iniciarMudancaTurma(ra, nome, ensino, turmaAtual) {
-
-  const listaTurmas = turmas[ensino];
-  if (!listaTurmas) return;
-
-  const novaTurma = prompt(
-    `Turma atual: ${turmaAtual}\n\nDigite a nova turma:`,
-    turmaAtual
-  );
-
-  if (!novaTurma || novaTurma === turmaAtual) return;
-
-  const confirmar = confirm(
-    `Alterar aluno "${nome}"\nDe "${turmaAtual}" para "${novaTurma}"?`
-  );
-
-  if (!confirmar) return;
-
-  const { error } = await supabase
-    .from("alunos")
-    .update({ turma: novaTurma })
-    .eq("ra", ra);
-
-  if (error) {
-    alert("Erro ao atualizar turma");
-    console.error(error);
-  } else {
-    carregarAlunos();
-  }
-}
-
-window.uploadFoto = async function(event, ra) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const { error } = await supabase.storage
-    .from('fotos-alunos')
-    .upload(`${ra}.jpg`, file, { upsert: true });
-
-  if (error) {
-    alert("Erro ao enviar foto");
-  } else {
-    carregarAlunos();
-  }
-}
-
-carregarAlunos();
-
-</script>
-</div>
+      const modal = document.getElementById("modalTurma");
+      const btnCancelar = document.getElementById("btnCancelar");
+      const btnConfirmar = document.getElementById("btnConfirmarTurma");
+      const selectNovaTurma = document.getElementById("selectNovaTurma");
+      
+      btnCancelar.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+      
+      btnConfirmar.addEventListener("click", async () => {
+      
+        const novaTurma = selectNovaTurma.value;
+      
+        if (novaTurma === alunoSelecionado.turmaAtual) {
+          modal.style.display = "none";
+          return;
+        }
+      
+        const confirmar = confirm(
+          `Alterar "${alunoSelecionado.nome}"\n` +
+          `de "${alunoSelecionado.turmaAtual}" para "${novaTurma}"?`
+        );
+      
+        if (!confirmar) return;
+      
+        const { error } = await supabase
+          .from("alunos")
+          .update({ turma: novaTurma })
+          .eq("ra", alunoSelecionado.ra);
+      
+        if (error) {
+          alert("Erro ao atualizar turma");
+          console.error(error);
+        } else {
+          modal.style.display = "none";
+          carregarAlunos();
+        }
+      });
+      
+      carregarAlunos();
+      
+      </script>
+  </div>
+    <!-- Modal Alterar Turma -->
+  <div id="modalTurma" class="modal-overlay">
+    <div class="modal">
+  
+      <h3>Alterar Turma</h3>
+  
+      <p id="modalInfo"></p>
+  
+      <select id="selectNovaTurma"></select>
+  
+      <div class="modal-actions">
+        <button id="btnCancelar" class="btn-secondary">Cancelar</button>
+        <button id="btnConfirmarTurma" class="btn-primary">Confirmar</button>
+      </div>
+  
+    </div>
+  </div>
 </body>
 </html>
+
