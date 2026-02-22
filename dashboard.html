@@ -92,13 +92,6 @@ tr:nth-child(even) {
   color: #991b1b;
 }
 
-img {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 select, input {
   padding: 6px;
   border-radius: 6px;
@@ -163,6 +156,10 @@ select, input {
 }
 
 .foto-mini {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
   cursor: pointer;
   transition: transform 0.2s ease;
 }
@@ -174,19 +171,20 @@ select, input {
 .overlay-foto {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.85);
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .overlay-foto img {
-  max-width: 95%;
-  max-height: 95%;
-  border-radius: 10px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-  animation: zoomIn 0.2s ease-in-out;
+  width: auto !important;
+  height: auto !important;
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
 
 @keyframes zoomIn {
@@ -525,6 +523,7 @@ select, input {
   </div>
 </body>
 </html>
+
 
 
 
