@@ -273,9 +273,9 @@ async function carregarAlunos() {
         <div class="acoes">
       
           <button 
-            class="btn-sm ${aluno.status === 'ativo' ? 'btn-danger' : 'btn-success'}"
+            class="btn-sm ${aluno.status === 'Ativo' ? 'btn-danger' : 'btn-success'}"
             onclick="alterarStatus('${aluno.ra}', '${aluno.status}')">
-            ${aluno.status === 'ativo' ? 'Inativar' : 'Ativar'}
+            ${aluno.status === 'Ativo' ? 'Inativar' : 'Ativar'}
           </button>
       
           <button 
@@ -364,6 +364,7 @@ carregarAlunos();
 </script>
 </body>
 </html>
+
 
 
 
