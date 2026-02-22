@@ -14,6 +14,7 @@ const turmas = {
 
 const selectEnsino = document.getElementById("filtroEnsino");
 const selectTurma = document.getElementById("filtroTurma");
+const selectStatus = document.getElementById("filtroStatus");
 const campoBusca = document.getElementById("buscaNome");
 
 selectEnsino.addEventListener("change", () => {
@@ -29,6 +30,8 @@ selectEnsino.addEventListener("change", () => {
 });
 
 selectTurma.addEventListener("change", carregarAlunos);
+
+selectStatus.addEventListener("change", carregarAlunos);
 
 let timeoutBusca;
 campoBusca.addEventListener("input", () => {
@@ -48,6 +51,9 @@ async function carregarAlunos() {
 
   if (selectTurma.value)
     query = query.eq("turma", selectTurma.value);
+
+  if (selectStatus.value)
+    query = query.eq("status", selectStatus.value);
 
   if (campoBusca.value.trim())
     query = query.or(
@@ -254,5 +260,6 @@ document.getElementById("visualizadorFoto").addEventListener("click", (e) => {
     e.currentTarget.style.display = "none";
   }
 });
+
 
 carregarAlunos();
