@@ -20,7 +20,9 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-h2 { margin-top: 0; }
+h2 {
+  margin-top: 0;
+}
 
 button {
   padding: 6px 12px;
@@ -30,10 +32,28 @@ button {
   font-size: 14px;
 }
 
-button:hover { opacity: 0.9; }
+button:hover {
+  opacity: 0.9;
+}
 
 .btn-primary { background-color: #2563eb; color: white; }
-.btn-secondary { background-color: #6b7280; color: white; }
+.btn-danger { background-color: #dc2626; color: white; }
+.btn-success { background-color: #16a34a; color: white; }
+.btn-warning { background-color: #f59e0b; color: white; }
+.btn-info { background-color: #0284c7; color: white; }
+
+.btn-sm {
+  font-size: 12px;
+  padding: 5px 8px;
+  min-width: 90px;
+}
+
+.acoes {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 
 table {
   border-collapse: collapse;
@@ -51,7 +71,9 @@ th {
   font-weight: 600;
 }
 
-tr:nth-child(even) { background-color: #f3f4f6; }
+tr:nth-child(even) {
+  background-color: #f3f4f6;
+}
 
 .badge {
   padding: 4px 8px;
@@ -60,8 +82,15 @@ tr:nth-child(even) { background-color: #f3f4f6; }
   font-weight: bold;
 }
 
-.badge-ativo { background-color: #dcfce7; color: #166534; }
-.badge-inativo { background-color: #fee2e2; color: #991b1b; }
+.badge-ativo {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-inativo {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
 
 img {
   width: 60px;
@@ -70,67 +99,11 @@ img {
   object-fit: cover;
 }
 
-input, select {
+select, input {
   padding: 6px;
   border-radius: 6px;
   border: 1px solid #ddd;
-}
-
-/* MODAL */
-
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 25px;
-  border-radius: 10px;
-  width: 350px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-  text-align: center;
-}
-
-.modal-buttons {
-  margin-top: 20px;
-  display: flex;
-  justify-content: space-between;
-}
-
-  /* Personalizer Botões de Ação*/
-
-.acoes {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.btn-sm {
-  font-size: 12px;
-  padding: 5px 8px;
-  min-width: 90px;
-}
-
-.btn-success {
-  background-color: #16a34a;
-  color: white;
-}
-
-.btn-warning {
-  background-color: #f59e0b;
-  color: white;
-}
-
-.btn-info {
-  background-color: #0284c7;
-  color: white;
+  margin-right: 8px;
 }
 </style>
 </head>
@@ -139,7 +112,7 @@ input, select {
 <div class="container">
 
 <h2>Painel do Sistema Escolar</h2>
-<button id="btnLogout" class="btn-secondary">Sair</button>
+<button id="btnLogout" class="btn-primary">Sair</button>
 
 <h3>Filtrar</h3>
 
@@ -153,29 +126,9 @@ input, select {
   <option value="">Todas as Turmas</option>
 </select>
 
-<button id="btnFiltrar" class="btn-primary">Buscar</button>
-
-<br><br>
-
 <input type="text" id="buscaNome" placeholder="Buscar por nome ou RA">
 
 <div id="tabelaAlunos"></div>
-
-</div>
-
-<!-- MODAL -->
-<div id="modalTurma" class="modal">
-  <div class="modal-content">
-    <h3>Alterar Turma</h3>
-    <p id="modalTexto"></p>
-    <select id="modalSelectTurma"></select>
-
-    <div class="modal-buttons">
-      <button id="btnCancelar" class="btn-secondary">Cancelar</button>
-      <button id="btnConfirmarTurma" class="btn-primary">Confirmar</button>
-    </div>
-  </div>
-</div>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -185,7 +138,7 @@ const supabase = createClient(
   "sb_publishable_cIHQLm1L_KAvvf1CrENu0w_QdgyNVjO"
 );
 
-// 🔐 Login
+// 🔐 Verificar login
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) window.location.href = "index.html";
 
@@ -207,8 +160,8 @@ const campoBusca = document.getElementById("buscaNome");
 selectEnsino.addEventListener("change", () => {
   selectTurma.innerHTML = '<option value="">Todas as Turmas</option>';
   if (turmas[selectEnsino.value]) {
-    turmas[selectEnsino.value].forEach(t => {
-      selectTurma.innerHTML += `<option value="${t}">${t}</option>`;
+    turmas[selectEnsino.value].forEach(turma => {
+      selectTurma.innerHTML += `<option value="${turma}">${turma}</option>`;
     });
   }
   carregarAlunos();
@@ -219,22 +172,31 @@ selectTurma.addEventListener("change", carregarAlunos);
 let timeoutBusca;
 campoBusca.addEventListener("input", () => {
   clearTimeout(timeoutBusca);
-  timeoutBusca = setTimeout(carregarAlunos, 300);
+  timeoutBusca = setTimeout(() => carregarAlunos(), 300);
 });
-
-document.getElementById("btnFiltrar").addEventListener("click", carregarAlunos);
 
 async function carregarAlunos() {
 
-  let query = supabase.from("alunos").select("*").order("nome");
+  let query = supabase
+    .from("alunos")
+    .select("*")
+    .order("nome", { ascending: true });
 
-  const busca = campoBusca.value.trim();
+  if (selectEnsino.value)
+    query = query.eq("ensino", selectEnsino.value);
 
-  if (selectEnsino.value) query = query.eq("ensino", selectEnsino.value);
-  if (selectTurma.value) query = query.eq("turma", selectTurma.value);
-  if (busca) query = query.or(`nome.ilike.%${busca}%,ra.ilike.%${busca}%`);
+  if (selectTurma.value)
+    query = query.eq("turma", selectTurma.value);
 
-  const { data } = await query;
+  if (campoBusca.value.trim())
+    query = query.or(`nome.ilike.%${campoBusca.value.trim()}%,ra.ilike.%${campoBusca.value.trim()}%`);
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   let html = `
   <table>
@@ -246,125 +208,156 @@ async function carregarAlunos() {
       <th>Turma</th>
       <th>Status</th>
       <th>Ação</th>
-    </tr>`;
+    </tr>
+  `;
 
   data.forEach(aluno => {
+
+    const statusNormalizado = aluno.status.toLowerCase();
 
     const { data: fotoData } = supabase
       .storage
       .from('fotos-alunos')
       .getPublicUrl(`${aluno.ra}.jpg`);
 
-    const fotoUrl = fotoData.publicUrl + '?t=' + Date.now();
+    const fotoUrl = fotoData.publicUrl + '?t=' + new Date().getTime();
 
     html += `
     <tr>
-      <td><img src="${fotoUrl}" onerror="this.src='https://via.placeholder.com/60'"></td>
+      <td>
+        <img src="${fotoUrl}" onerror="this.src='https://via.placeholder.com/60'">
+      </td>
       <td>${aluno.ra}</td>
       <td>${aluno.nome}</td>
       <td>${aluno.ensino}</td>
       <td>${aluno.turma}</td>
       <td>
-        <span class="badge ${aluno.status === 'Ativo' ? 'badge-ativo' : 'badge-inativo'}">
+        <span class="badge ${statusNormalizado === 'ativo' ? 'badge-ativo' : 'badge-inativo'}">
           ${aluno.status}
         </span>
       </td>
       <td>
         <div class="acoes">
-      
+
           <button 
-            class="btn-sm ${aluno.status === 'Ativo' ? 'btn-danger' : 'btn-success'}"
-            onclick="alterarStatus('${aluno.ra}', '${aluno.status}')">
-            ${aluno.status === 'Ativo' ? 'Inativar' : 'Ativar'}
+            class="btn-sm ${statusNormalizado === 'ativo' ? 'btn-danger' : 'btn-success'} btn-status"
+            data-ra="${aluno.ra}"
+            data-status="${aluno.status}">
+            ${statusNormalizado === 'ativo' ? 'Inativar' : 'Ativar'}
           </button>
-      
+
           <button 
-            class="btn-sm btn-warning"
-            onclick="iniciarMudancaTurma('${aluno.ra}', '${aluno.nome}', '${aluno.ensino}', '${aluno.turma}')">
+            class="btn-sm btn-warning btn-turma"
+            data-ra="${aluno.ra}"
+            data-nome="${aluno.nome}"
+            data-ensino="${aluno.ensino}"
+            data-turma="${aluno.turma}">
             Alterar Turma
           </button>
-      
+
           <label class="btn-sm btn-info" style="cursor:pointer;">
             Foto
             <input type="file" accept="image/*"
               style="display:none;"
               onchange="uploadFoto(event, '${aluno.ra}')">
           </label>
-      
+
         </div>
       </td>
-    </tr>`;
+    </tr>
+    `;
   });
 
   html += "</table>";
   document.getElementById("tabelaAlunos").innerHTML = html;
+
+  // Eventos status
+  document.querySelectorAll(".btn-status").forEach(btn => {
+    btn.addEventListener("click", () => {
+      alterarStatus(btn.dataset.ra, btn.dataset.status);
+    });
+  });
+
+  // Eventos turma
+  document.querySelectorAll(".btn-turma").forEach(btn => {
+    btn.addEventListener("click", () => {
+      iniciarMudancaTurma(
+        btn.dataset.ra,
+        btn.dataset.nome,
+        btn.dataset.ensino,
+        btn.dataset.turma
+      );
+    });
+  });
 }
 
-// Upload
+async function alterarStatus(ra, statusAtual) {
+
+  const statusNormalizado = statusAtual.toLowerCase();
+  const novoStatus = statusNormalizado === "ativo" ? "Inativo" : "Ativo";
+
+  const { error } = await supabase
+    .from("alunos")
+    .update({ status: novoStatus })
+    .eq("ra", ra);
+
+  if (error) {
+    alert("Erro ao atualizar status");
+    console.error(error);
+  } else {
+    carregarAlunos();
+  }
+}
+
+async function iniciarMudancaTurma(ra, nome, ensino, turmaAtual) {
+
+  const listaTurmas = turmas[ensino];
+  if (!listaTurmas) return;
+
+  const novaTurma = prompt(
+    `Turma atual: ${turmaAtual}\n\nDigite a nova turma:`,
+    turmaAtual
+  );
+
+  if (!novaTurma || novaTurma === turmaAtual) return;
+
+  const confirmar = confirm(
+    `Alterar aluno "${nome}"\nDe "${turmaAtual}" para "${novaTurma}"?`
+  );
+
+  if (!confirmar) return;
+
+  const { error } = await supabase
+    .from("alunos")
+    .update({ turma: novaTurma })
+    .eq("ra", ra);
+
+  if (error) {
+    alert("Erro ao atualizar turma");
+    console.error(error);
+  } else {
+    carregarAlunos();
+  }
+}
+
 window.uploadFoto = async function(event, ra) {
   const file = event.target.files[0];
   if (!file) return;
 
-  await supabase.storage
+  const { error } = await supabase.storage
     .from('fotos-alunos')
     .upload(`${ra}.jpg`, file, { upsert: true });
 
-  carregarAlunos();
-}
-
-// MODAL
-let alunoSelecionado = null;
-
-window.abrirModalTurma = function(ra, nome, ensino, turmaAtual) {
-
-  alunoSelecionado = { ra, nome, turmaAtual };
-
-  const select = document.getElementById("modalSelectTurma");
-  select.innerHTML = "";
-
-  turmas[ensino].forEach(t => {
-    const option = document.createElement("option");
-    option.value = t;
-    option.textContent = t;
-    if (t === turmaAtual) option.selected = true;
-    select.appendChild(option);
-  });
-
-  document.getElementById("modalTexto").innerHTML =
-    `Aluno: <strong>${nome}</strong><br>
-     Turma atual: <strong>${turmaAtual}</strong>`;
-
-  document.getElementById("modalTurma").style.display = "flex";
-};
-
-document.getElementById("btnCancelar").addEventListener("click", () => {
-  document.getElementById("modalTurma").style.display = "none";
-});
-
-document.getElementById("btnConfirmarTurma").addEventListener("click", async () => {
-
-  const novaTurma = document.getElementById("modalSelectTurma").value;
-
-  if (novaTurma === alunoSelecionado.turmaAtual) {
-    document.getElementById("modalTurma").style.display = "none";
-    return;
+  if (error) {
+    alert("Erro ao enviar foto");
+  } else {
+    carregarAlunos();
   }
-
-  await supabase
-    .from("alunos")
-    .update({ turma: novaTurma })
-    .eq("ra", alunoSelecionado.ra);
-
-  document.getElementById("modalTurma").style.display = "none";
-  carregarAlunos();
-});
+}
 
 carregarAlunos();
 
 </script>
+</div>
 </body>
 </html>
-
-
-
-
