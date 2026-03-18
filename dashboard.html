@@ -62,46 +62,47 @@
 </div>
 
 <div id="modalInserirAluno" class="modal-overlay">
-  <div class="modal">
-    <h3>Inserir Novo Aluno</h3>
-
-    <div class="form-group">
-      <label for="novoRa">RA</label>
-      <input type="text" id="novoRa" placeholder="Digite o RA">
+  <div class="modal modal-aluno">
+    <div class="modal-header">
+      <h3>Inserir Novo Aluno</h3>
+      <p>Preencha os dados abaixo para cadastrar o aluno no carômetro.</p>
     </div>
 
-    <div class="form-group">
-      <label for="novoNome">Nome</label>
-      <input type="text" id="novoNome" placeholder="Digite o nome do aluno">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="novoRa">RA</label>
+        <input type="text" id="novoRa" placeholder="Digite o RA">
+      </div>
+
+      <div class="form-group form-group-full">
+        <label for="novoNome">Nome do aluno</label>
+        <input type="text" id="novoNome" placeholder="Digite o nome completo do aluno">
+      </div>
+
+      <div class="form-group">
+        <label for="novoEnsino">Ensino</label>
+        <select id="novoEnsino">
+          <option value="">Selecione</option>
+          <option value="Fundamental">Fundamental</option>
+          <option value="Médio">Médio</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="novaTurma">Turma</label>
+        <select id="novaTurma">
+          <option value="">Selecione o ensino primeiro</option>
+        </select>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="novoEnsino">Ensino</label>
-      <select id="novoEnsino">
-        <option value="">Selecione</option>
-        <option value="Fundamental">Fundamental</option>
-        <option value="Médio">Médio</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="novaTurma">Turma</label>
-      <select id="novaTurma">
-        <option value="">Selecione o ensino primeiro</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="novoStatus">Status</label>
-      <select id="novoStatus">
-        <option value="Ativo" selected>Ativo</option>
-        <option value="Inativo">Inativo</option>
-      </select>
+    <div class="status-padrao-box">
+      Status inicial do aluno: <strong>Ativo</strong>
     </div>
 
     <div class="modal-actions">
-      <button id="btnCancelarInsercao" class="btn-secondary">Cancelar</button>
-      <button id="btnSalvarAluno" class="btn-primary">Salvar</button>
+      <button id="btnCancelarInsercao" class="btn-topo btn-topo-neutro">Cancelar</button>
+      <button id="btnSalvarAluno" class="btn-topo btn-topo-primario">Salvar</button>
     </div>
   </div>
 </div>
