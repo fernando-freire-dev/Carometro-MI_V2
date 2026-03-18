@@ -4,66 +4,128 @@ import { verificarLogin, logout } from "./auth.js";
 await verificarLogin();
 
 // Logout
-document.getElementById("btnLogout").addEventListener("click", logout);
+document.getElementById("btnLogout")?.addEventListener("click", logout);
 
 // 🎓 Turmas
 const turmas = {
-  "Fundamental": ["6ºA","6ºB","6ºC","7ºA","7ºB","7ºC","8ºA","8ºB","9ºA","9ºB","9ºC"],
-  "Médio": ["1ºA","1ºB","1ºC","2ºA","2ºB","2ºC","3ºA","3ºB","3ºC"]
+  Fundamental: ["6ºA", "6ºB", "6ºC", "7ºA", "7ºB", "7ºC", "8ºA", "8ºB", "9ºA", "9ºB", "9ºC"],
+  Médio: ["1ºA", "1ºB", "1ºC", "2ºA", "2ºB", "2ºC", "3ºA", "3ºB", "3ºC"]
 };
 
 const selectEnsino = document.getElementById("filtroEnsino");
 const selectTurma = document.getElementById("filtroTurma");
 const selectStatus = document.getElementById("filtroStatus");
 const campoBusca = document.getElementById("buscaNome");
+const tabelaAlunos = document.getElementById("tabelaAlunos");
+const visualizadorFoto = document.getElementById("visualizadorFoto");
+const fotoAmpliada = document.getElementById("fotoAmpliada");
+const modalTurma = document.getElementById("modalTurma");
+const modalInfo = document.getElementById("modalInfo");
+const selectNovaTurma = document.getElementById("selectNovaTurma");
+const btnCancelar = document.getElementById("btnCancelar");
+const btnConfirmarTurma = document.getElementById("btnConfirmarTurma");
+const toggleRA = document.getElementById("toggleRA");
 
-selectEnsino.addEventListener("change", () => {
+let timeoutBusca;
+let raVisivel = false;
+let alunoSelecionado = null;
+
+// =========================
+// Utilidades
+// =========================
+function escaparHtml(valor) {
+  if (valor === null || valor === undefined) return "";
+  return String(valor)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function obterStatusNormalizado(status) {
+  return (status || "").toString().trim().toLowerCase();
+}
+
+function obterFotoUrl(ra) {
+  const { data } = supabase
+    .storage
+    .from("fotos-alunos")
+    .getPublicUrl(`${ra}.jpg`);
+
+  return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+function mostrarMensagem(texto) {
+  alert(texto);
+}
+
+function preencherSelectTurmas() {
   selectTurma.innerHTML = '<option value="">Todas as Turmas</option>';
 
   if (turmas[selectEnsino.value]) {
-    turmas[selectEnsino.value].forEach(turma => {
-      selectTurma.innerHTML += `<option value="${turma}">${turma}</option>`;
+    turmas[selectEnsino.value].forEach((turma) => {
+      selectTurma.innerHTML += `<option value="${escaparHtml(turma)}">${escaparHtml(turma)}</option>`;
     });
   }
+}
 
+// =========================
+// Eventos de filtro
+// =========================
+selectEnsino?.addEventListener("change", () => {
+  preencherSelectTurmas();
   carregarAlunos();
 });
 
-selectTurma.addEventListener("change", carregarAlunos);
+selectTurma?.addEventListener("change", carregarAlunos);
+selectStatus?.addEventListener("change", carregarAlunos);
 
-selectStatus.addEventListener("change", carregarAlunos);
-
-let timeoutBusca;
-campoBusca.addEventListener("input", () => {
+campoBusca?.addEventListener("input", () => {
   clearTimeout(timeoutBusca);
   timeoutBusca = setTimeout(() => carregarAlunos(), 300);
 });
 
+// =========================
+// Carregar alunos
+// =========================
 async function carregarAlunos() {
-
   let query = supabase
     .from("alunos")
     .select("*")
     .order("nome", { ascending: true });
 
-  if (selectEnsino.value)
+  if (selectEnsino?.value) {
     query = query.eq("ensino", selectEnsino.value);
+  }
 
-  if (selectTurma.value)
+  if (selectTurma?.value) {
     query = query.eq("turma", selectTurma.value);
+  }
 
-  if (selectStatus.value)
+  if (selectStatus?.value) {
     query = query.eq("status", selectStatus.value);
+  }
 
-  if (campoBusca.value.trim())
-    query = query.or(
-      `nome.ilike.%${campoBusca.value.trim()}%,ra.ilike.%${campoBusca.value.trim()}%`
-    );
+  const busca = campoBusca?.value?.trim();
+  if (busca) {
+    query = query.or(`nome.ilike.%${busca}%,ra.ilike.%${busca}%`);
+  }
 
   const { data, error } = await query;
 
   if (error) {
-    console.error(error);
+    console.error("Erro ao carregar alunos:", error);
+    tabelaAlunos.innerHTML = `<p>Erro ao carregar alunos.</p>`;
+    return;
+  }
+
+  renderizarTabela(data || []);
+}
+
+function renderizarTabela(alunos) {
+  if (!alunos.length) {
+    tabelaAlunos.innerHTML = `<p>Nenhum aluno encontrado.</p>`;
     return;
   }
 
@@ -71,70 +133,69 @@ async function carregarAlunos() {
     <table>
       <tr>
         <th>Foto</th>
-        <th class="col-ra" style="display:none;">RA</th>
+        <th class="col-ra" style="display:${raVisivel ? "table-cell" : "none"};">RA</th>
         <th>Nome</th>
-        <th>Turma</th>       
+        <th>Turma</th>
         <th>Status</th>
-        <th>Ensino</th> 
+        <th>Ensino</th>
         <th>Ação</th>
       </tr>
   `;
 
-  data.forEach(aluno => {
-
-    const statusNormalizado = aluno.status.toLowerCase();
-
-    const { data: fotoData } = supabase
-      .storage
-      .from('fotos-alunos')
-      .getPublicUrl(`${aluno.ra}.jpg`);
-
-    const fotoUrl = fotoData.publicUrl + '?t=' + new Date().getTime();
+  alunos.forEach((aluno) => {
+    const statusNormalizado = obterStatusNormalizado(aluno.status);
+    const fotoUrl = obterFotoUrl(aluno.ra);
 
     html += `
       <tr>
         <td>
-          <img 
-            src="${fotoUrl}" 
+          <img
+            src="${fotoUrl}"
             class="foto-mini"
             data-src="${fotoUrl}"
-            onerror="this.src='https://via.placeholder.com/60'">
+            data-ra="${escaparHtml(aluno.ra)}"
+            onerror="this.src='https://via.placeholder.com/60'"
+            style="cursor:pointer;"
+          >
         </td>
-        <td class="col-ra" style="display:none;">${aluno.ra}</td>
-        <td>${aluno.nome}</td>        
-        <td>${aluno.turma}</td>
+        <td class="col-ra" style="display:${raVisivel ? "table-cell" : "none"};">
+          ${escaparHtml(aluno.ra)}
+        </td>
+        <td>${escaparHtml(aluno.nome)}</td>
+        <td>${escaparHtml(aluno.turma)}</td>
         <td>
-          <span class="badge ${statusNormalizado === 'ativo' ? 'badge-ativo' : 'badge-inativo'}">
-            ${aluno.status}
+          <span class="badge ${statusNormalizado === "ativo" ? "badge-ativo" : "badge-inativo"}">
+            ${escaparHtml(aluno.status)}
           </span>
         </td>
-        <td>${aluno.ensino}</td>
+        <td>${escaparHtml(aluno.ensino)}</td>
         <td>
           <div class="acoes">
-
-            <button 
-              class="btn-sm ${statusNormalizado === 'ativo' ? 'btn-danger' : 'btn-success'} btn-status"
-              data-ra="${aluno.ra}"
-              data-status="${aluno.status}">
-              ${statusNormalizado === 'ativo' ? 'Inativar' : 'Ativar'}
+            <button
+              class="btn-sm ${statusNormalizado === "ativo" ? "btn-danger" : "btn-success"} btn-status"
+              data-ra="${escaparHtml(aluno.ra)}"
+              data-status="${escaparHtml(aluno.status)}">
+              ${statusNormalizado === "ativo" ? "Inativar" : "Ativar"}
             </button>
 
-            <button 
+            <button
               class="btn-sm btn-warning btn-turma"
-              data-ra="${aluno.ra}"
-              data-nome="${aluno.nome}"
-              data-ensino="${aluno.ensino}"
-              data-turma="${aluno.turma}">
+              data-ra="${escaparHtml(aluno.ra)}"
+              data-nome="${escaparHtml(aluno.nome)}"
+              data-ensino="${escaparHtml(aluno.ensino)}"
+              data-turma="${escaparHtml(aluno.turma)}">
               Alterar Turma
             </button>
 
             <label class="btn-sm btn-info" style="cursor:pointer;">
               Foto
-              <input type="file" accept="image/*"
+              <input
+                type="file"
+                accept="image/*"
                 style="display:none;"
-                data-ra="${aluno.ra}">
+                class="input-foto"
+                data-ra="${escaparHtml(aluno.ra)}">
             </label>
-
           </div>
         </td>
       </tr>
@@ -142,136 +203,162 @@ async function carregarAlunos() {
   });
 
   html += "</table>";
-  document.getElementById("tabelaAlunos").innerHTML = html;
-
-  ativarEventos();
+  tabelaAlunos.innerHTML = html;
 }
 
-function ativarEventos() {
+// =========================
+// Delegação de eventos
+// =========================
+tabelaAlunos?.addEventListener("click", async (event) => {
+  const btnStatus = event.target.closest(".btn-status");
+  const btnTurma = event.target.closest(".btn-turma");
+  const fotoMini = event.target.closest(".foto-mini");
 
-  // Alterar status
-  document.querySelectorAll(".btn-status").forEach(btn => {
-    btn.addEventListener("click", async () => {
+  if (btnStatus) {
+    const ra = btnStatus.dataset.ra;
+    const statusAtual = obterStatusNormalizado(btnStatus.dataset.status);
+    const novoStatus = statusAtual === "ativo" ? "Inativo" : "Ativo";
 
-      const ra = btn.dataset.ra;
-      const statusAtual = btn.dataset.status.toLowerCase();
-      const novoStatus = statusAtual === "ativo" ? "Inativo" : "Ativo";
+    btnStatus.disabled = true;
 
-      await supabase
-        .from("alunos")
-        .update({ status: novoStatus })
-        .eq("ra", ra);
+    const { error } = await supabase
+      .from("alunos")
+      .update({ status: novoStatus })
+      .eq("ra", ra);
 
-      carregarAlunos();
-    });
-  });
+    btnStatus.disabled = false;
 
-  // Alterar turma
-  document.querySelectorAll(".btn-turma").forEach(btn => {
-    btn.addEventListener("click", () => {
-      iniciarMudancaTurma(
-        btn.dataset.ra,
-        btn.dataset.nome,
-        btn.dataset.ensino,
-        btn.dataset.turma
-      );
-    });
-  });
+    if (error) {
+      console.error("Erro ao alterar status:", error);
+      mostrarMensagem("Não foi possível alterar o status do aluno.");
+      return;
+    }
 
-  // Upload foto
-  document.querySelectorAll("input[type='file']").forEach(input => {
-    input.addEventListener("change", async (event) => {
+    carregarAlunos();
+    return;
+  }
 
-      const file = event.target.files[0];
-      const ra = input.dataset.ra;
-      if (!file) return;
+  if (btnTurma) {
+    iniciarMudancaTurma(
+      btnTurma.dataset.ra,
+      btnTurma.dataset.nome,
+      btnTurma.dataset.ensino,
+      btnTurma.dataset.turma
+    );
+    return;
+  }
 
-      await supabase.storage
-        .from('fotos-alunos')
-        .upload(`${ra}.jpg`, file, { upsert: true });
+  if (fotoMini) {
+    fotoAmpliada.src = fotoMini.dataset.src;
+    visualizadorFoto.style.display = "flex";
+  }
+});
 
-      carregarAlunos();
-    });
-  });
+tabelaAlunos?.addEventListener("change", async (event) => {
+  const inputFoto = event.target.closest(".input-foto");
+  if (!inputFoto) return;
 
-  // Visualizar foto
-  document.querySelectorAll(".foto-mini").forEach(img => {
-    img.addEventListener("click", () => {
-      document.getElementById("fotoAmpliada").src = img.dataset.src;
-      document.getElementById("visualizadorFoto").style.display = "flex";
-    });
-  });
-}
+  const file = inputFoto.files?.[0];
+  const ra = inputFoto.dataset.ra;
 
+  if (!file) return;
+
+  const { error } = await supabase.storage
+    .from("fotos-alunos")
+    .upload(`${ra}.jpg`, file, { upsert: true });
+
+  if (error) {
+    console.error("Erro ao enviar foto:", error);
+    mostrarMensagem("Não foi possível enviar a foto.");
+    return;
+  }
+
+  mostrarMensagem("Foto enviada com sucesso.");
+  carregarAlunos();
+});
+
+// =========================
 // Modal turma
-let alunoSelecionado = null;
-
+// =========================
 function iniciarMudancaTurma(ra, nome, ensino, turmaAtual) {
-
   alunoSelecionado = { ra, turmaAtual };
 
-  const modal = document.getElementById("modalTurma");
-  const info = document.getElementById("modalInfo");
-  const select = document.getElementById("selectNovaTurma");
-
-  info.innerHTML = `
-    Aluno: <strong>${nome}</strong><br>
-    Turma atual: <strong>${turmaAtual}</strong>
+  modalInfo.innerHTML = `
+    Aluno: <strong>${escaparHtml(nome)}</strong><br>
+    Turma atual: <strong>${escaparHtml(turmaAtual)}</strong>
   `;
 
-  select.innerHTML = "";
+  selectNovaTurma.innerHTML = "";
 
-  turmas[ensino].forEach(turma => {
+  if (!turmas[ensino]) {
+    mostrarMensagem("Ensino não encontrado para este aluno.");
+    return;
+  }
+
+  turmas[ensino].forEach((turma) => {
     const option = document.createElement("option");
     option.value = turma;
     option.textContent = turma;
     if (turma === turmaAtual) option.selected = true;
-    select.appendChild(option);
+    selectNovaTurma.appendChild(option);
   });
 
-  modal.style.display = "flex";
+  modalTurma.style.display = "flex";
 }
 
-document.getElementById("btnCancelar").addEventListener("click", () => {
-  document.getElementById("modalTurma").style.display = "none";
+btnCancelar?.addEventListener("click", () => {
+  modalTurma.style.display = "none";
 });
 
-document.getElementById("btnConfirmarTurma").addEventListener("click", async () => {
+btnConfirmarTurma?.addEventListener("click", async () => {
+  if (!alunoSelecionado) return;
 
-  const novaTurma = document.getElementById("selectNovaTurma").value;
+  const novaTurma = selectNovaTurma.value;
 
   if (novaTurma === alunoSelecionado.turmaAtual) {
-    document.getElementById("modalTurma").style.display = "none";
+    modalTurma.style.display = "none";
     return;
   }
 
-  await supabase
+  btnConfirmarTurma.disabled = true;
+
+  const { error } = await supabase
     .from("alunos")
     .update({ turma: novaTurma })
     .eq("ra", alunoSelecionado.ra);
 
-  document.getElementById("modalTurma").style.display = "none";
+  btnConfirmarTurma.disabled = false;
+
+  if (error) {
+    console.error("Erro ao alterar turma:", error);
+    mostrarMensagem("Não foi possível alterar a turma.");
+    return;
+  }
+
+  modalTurma.style.display = "none";
+  mostrarMensagem("Turma alterada com sucesso.");
   carregarAlunos();
 });
 
-// Fechar visualizador
-document.getElementById("visualizadorFoto").addEventListener("click", (e) => {
+// =========================
+// Visualizador de foto
+// =========================
+visualizadorFoto?.addEventListener("click", (e) => {
   if (e.target.id === "visualizadorFoto") {
     e.currentTarget.style.display = "none";
   }
 });
 
-// Esconde a coluna RA
-let raVisivel = false;
-
-document.getElementById("toggleRA").addEventListener("click", () => {
-
+// =========================
+// Mostrar/ocultar RA
+// =========================
+toggleRA?.addEventListener("click", () => {
   raVisivel = !raVisivel;
 
-  document.querySelectorAll(".col-ra").forEach(col => {
+  document.querySelectorAll(".col-ra").forEach((col) => {
     col.style.display = raVisivel ? "table-cell" : "none";
   });
 });
+
+// Inicialização
 carregarAlunos();
-
-
