@@ -202,7 +202,7 @@ function renderizarTabela(alunos) {
             class="foto-mini"
             data-src="${fotoUrl}"
             data-ra="${escaparHtml(aluno.ra)}"
-            onerror="this.src='https://via.placeholder.com/60'"
+            onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23dbeafe%22/><circle cx=%2230%22 cy=%2222%22 r=%2210%22 fill=%22%232563eb%22/><rect x=%2212%22 y=%2235%22 width=%2236%22 height=%2216%22 rx=%228%22 fill=%22%232563eb%22/></svg>'"
             style="cursor:pointer;"
           >
         </td>
