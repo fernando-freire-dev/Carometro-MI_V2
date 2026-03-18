@@ -212,3 +212,165 @@ select, input {
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
+
+/* =========================
+   Botões do topo
+========================= */
+.topo-acoes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-topo,
+.topo-acoes button {
+  height: 42px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topo-acoes button:hover,
+.btn-topo:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.btn-topo-sucesso,
+#btnInserirAluno {
+  background: #16a34a;
+  color: #fff;
+}
+
+.btn-topo-neutro,
+#toggleRA {
+  background: #6b7280;
+  color: #fff;
+}
+
+.btn-topo-primario,
+#btnLogout {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* =========================
+   Modal inserir aluno
+========================= */
+.modal-aluno {
+  width: 100%;
+  max-width: 640px;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  padding: 24px 28px 18px;
+}
+
+.modal-header h3 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.modal-header p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.95;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 20px;
+  padding: 24px 28px 8px;
+}
+
+.form-group-full {
+  grid-column: 1 / -1;
+}
+
+.modal-aluno .form-group {
+  margin-bottom: 0;
+}
+
+.modal-aluno .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.modal-aluno .form-group input,
+.modal-aluno .form-group select {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 15px;
+  background: #f9fafb;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.modal-aluno .form-group input:focus,
+.modal-aluno .form-group select:focus {
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.status-padrao-box {
+  margin: 0 28px 18px;
+  padding: 12px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  color: #1e3a8a;
+  font-size: 14px;
+}
+
+.modal-aluno .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 28px 24px;
+}
+
+/* =========================
+   Responsivo
+========================= */
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group-full {
+    grid-column: auto;
+  }
+
+  .modal-aluno .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-aluno .modal-actions button {
+    width: 100%;
+  }
+}
