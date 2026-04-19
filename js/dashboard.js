@@ -67,7 +67,8 @@ function obterFotoUrl(ra) {
     .from("fotos-alunos")
     .getPublicUrl(`${ra}.jpg`);
 
-  return `${data.publicUrl}?t=${Date.now()}`;
+  return data.publicUrl;
+  //return `${data.publicUrl}?t=${Date.now()}`;
 }
 
 function mostrarMensagem(texto) {
@@ -140,7 +141,7 @@ novoEnsino?.addEventListener("change", () => {
 async function carregarAlunos() {
   let query = supabase
     .from("alunos")
-    .select("*")
+    .select("ra, nome, turma, status, ensino")
     .order("nome", { ascending: true });
 
   if (selectEnsino?.value) {
@@ -198,10 +199,10 @@ function renderizarTabela(alunos) {
       <tr>
         <td>
           <img
-            src="${fotoUrl}"
-            class="foto-mini"
             data-src="${fotoUrl}"
+            class="foto-mini lazy"
             data-ra="${escaparHtml(aluno.ra)}"
+            loading="lazy"
             onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23dbeafe%22/><circle cx=%2230%22 cy=%2222%22 r=%2210%22 fill=%22%232563eb%22/><rect x=%2212%22 y=%2235%22 width=%2236%22 height=%2216%22 rx=%228%22 fill=%22%232563eb%22/></svg>'"
             style="cursor:pointer;"
           >
@@ -258,6 +259,7 @@ function renderizarTabela(alunos) {
 
   html += "</table>";
   tabelaAlunos.innerHTML = html;
+  ativarLazyLoading(); // 👈 ESSENCIAL
 }
 
 // =========================
@@ -488,6 +490,25 @@ toggleRA?.addEventListener("click", () => {
 
   toggleRA.textContent = raVisivel ? "Ocultar RA" : "Mostrar RA";
 });
+
+//==========================
+// Carrega as fotos de forma gradual
+//==========================
+function ativarLazyLoading() {
+  const imagens = document.querySelectorAll("img.lazy");
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        img.src = img.dataset.src;
+        obs.unobserve(img);
+      }
+    });
+  });
+
+  imagens.forEach(img => observer.observe(img));
+}
 
 // =========================
 // Inicialização
