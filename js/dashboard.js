@@ -151,7 +151,16 @@ novoEnsino?.addEventListener("change", () => {
 async function carregarAlunos() {
   //Forçar escolher a turma
   if (!selectEnsino?.value || !selectTurma?.value) {
-    tabelaAlunos.innerHTML = "<p>Selecione o ensino e a turma para visualizar os alunos.</p>";
+    //tabelaAlunos.innerHTML = "<p>Selecione o ensino e a turma para visualizar os alunos.</p>";
+    tabelaAlunos.innerHTML = `
+      <div class="estado-vazio">
+        <div class="estado-box">
+          <div class="estado-icone">🎓</div>
+          <h3>Selecione uma turma</h3>
+          <p>Selecione primeiro o ensino e depois a turma para visualizar os alunos.</p>
+        </div>
+      </div>
+    `;
     return;
   }
   mostrarLoading(); // 👈 AQUI
