@@ -172,8 +172,6 @@ async function carregarAlunos() {
     .select("ra, nome, turma, status, ensino")
     .order("nome", { ascending: true });
 
-  const busca = campoBusca?.value?.trim();
-
   if (busca) {
     // 🔎 BUSCA GLOBAL (ignora ensino/turma)
     query = query.or(`nome.ilike.%${busca}%,ra.ilike.%${busca}%`);
