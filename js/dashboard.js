@@ -150,8 +150,10 @@ novoEnsino?.addEventListener("change", () => {
 // =========================
 async function carregarAlunos() {
   //Forçar escolher a turma
-  if (!selectEnsino?.value || !selectTurma?.value) {
-    //tabelaAlunos.innerHTML = "<p>Selecione o ensino e a turma para visualizar os alunos.</p>";
+  const busca = campoBusca?.value?.trim();
+
+  // 🚀 Só exige filtro se NÃO houver busca
+  if ((!selectEnsino?.value || !selectTurma?.value) && !busca) {
     tabelaAlunos.innerHTML = `
       <div class="estado-vazio">
         <div class="estado-box">
@@ -170,21 +172,24 @@ async function carregarAlunos() {
     .select("ra, nome, turma, status, ensino")
     .order("nome", { ascending: true });
 
-  if (selectEnsino?.value) {
-    query = query.eq("ensino", selectEnsino.value);
-  }
-
-  if (selectTurma?.value) {
-    query = query.eq("turma", selectTurma.value);
-  }
-
-  if (selectStatus?.value) {
-    query = query.eq("status", selectStatus.value);
-  }
-
   const busca = campoBusca?.value?.trim();
+
   if (busca) {
+    // 🔎 BUSCA GLOBAL (ignora ensino/turma)
     query = query.or(`nome.ilike.%${busca}%,ra.ilike.%${busca}%`);
+  } else {
+    // 🎯 FILTROS NORMAIS
+    if (selectEnsino?.value) {
+      query = query.eq("ensino", selectEnsino.value);
+    }
+  
+    if (selectTurma?.value) {
+      query = query.eq("turma", selectTurma.value);
+    }
+  
+    if (selectStatus?.value) {
+      query = query.eq("status", selectStatus.value);
+    }
   }
 
   const { data, error } = await query;
