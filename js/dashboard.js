@@ -45,13 +45,6 @@ let alunoSelecionado = null;
 const ehCoordenador = usuarioAtual?.role === "coordenador";
 
 // =========================
-// ☁️ Cloudinary
-// =========================
-const CLOUDINARY_CLOUD_NAME = "dqc3eto6e";
-const CLOUDINARY_UPLOAD_PRESET = "carometro-upload";
-const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-
-// =========================
 // Utilidades
 // =========================
 function escaparHtml(valor) {
@@ -68,15 +61,21 @@ function obterStatusNormalizado(status) {
   return (status || "").toString().trim().toLowerCase();
 }
 
-// ✅ ATUALIZADO: busca foto do Cloudinary pelo RA
 function obterFotoUrl(ra) {
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${ra}.jpg`;
+  const { data } = supabase
+    .storage
+    .from("fotos-alunos")
+    .getPublicUrl(`${ra}.jpg`);
+
+  return data.publicUrl;
+  //return `${data.publicUrl}?t=${Date.now()}`;
 }
 
 function mostrarMensagem(texto) {
   alert(texto);
 }
 
+//Função de Loading para escolher a turma que deseja visualizar
 function mostrarLoading() {
   tabelaAlunos.innerHTML = `
     <div style="text-align:center; padding:30px;">
@@ -150,8 +149,10 @@ novoEnsino?.addEventListener("change", () => {
 // Carregar alunos
 // =========================
 async function carregarAlunos() {
+  //Forçar escolher a turma
   const busca = campoBusca?.value?.trim();
 
+  // 🚀 Só exige filtro se NÃO houver busca
   if ((!selectEnsino?.value || !selectTurma?.value) && !busca) {
     tabelaAlunos.innerHTML = `
       <div class="estado-vazio">
@@ -164,25 +165,26 @@ async function carregarAlunos() {
     `;
     return;
   }
-
-  mostrarLoading();
-
+  mostrarLoading(); // 👈 AQUI
+  //Código antigo
   let query = supabase
     .from("alunos")
     .select("ra, nome, turma, status, ensino")
     .order("nome", { ascending: true });
 
   if (busca) {
+    // 🔎 BUSCA GLOBAL (ignora ensino/turma)
     query = query.or(`nome.ilike.%${busca}%,ra.ilike.%${busca}%`);
   } else {
+    // 🎯 FILTROS NORMAIS
     if (selectEnsino?.value) {
       query = query.eq("ensino", selectEnsino.value);
     }
-
+  
     if (selectTurma?.value) {
       query = query.eq("turma", selectTurma.value);
     }
-
+  
     if (selectStatus?.value) {
       query = query.eq("status", selectStatus.value);
     }
@@ -286,7 +288,7 @@ function renderizarTabela(alunos) {
 
   html += "</table>";
   tabelaAlunos.innerHTML = html;
-  ativarLazyLoading();
+  ativarLazyLoading(); // 👈 ESSENCIAL
 }
 
 // =========================
@@ -337,7 +339,6 @@ tabelaAlunos?.addEventListener("click", async (event) => {
   }
 });
 
-// ✅ ATUALIZADO: upload de foto para o Cloudinary
 tabelaAlunos?.addEventListener("change", async (event) => {
   const inputFoto = event.target.closest(".input-foto");
   if (!inputFoto || !ehCoordenador) return;
@@ -347,33 +348,18 @@ tabelaAlunos?.addEventListener("change", async (event) => {
 
   if (!file) return;
 
-  // Monta o FormData para a API do Cloudinary
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-  formData.append("public_id", ra); // usa o RA como nome do arquivo
+  const { error } = await supabase.storage
+    .from("fotos-alunos")
+    .upload(`${ra}.jpg`, file, { upsert: true });
 
-  try {
-    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
-      method: "POST",
-      body: formData,
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || result.error) {
-      console.error("Erro Cloudinary:", result.error);
-      mostrarMensagem("Não foi possível enviar a foto.");
-      return;
-    }
-
-    mostrarMensagem("Foto enviada com sucesso.");
-    carregarAlunos();
-
-  } catch (err) {
-    console.error("Erro ao enviar foto:", err);
-    mostrarMensagem("Erro de conexão ao enviar a foto.");
+  if (error) {
+    console.error("Erro ao enviar foto:", error);
+    mostrarMensagem("Não foi possível enviar a foto.");
+    return;
   }
+
+  mostrarMensagem("Foto enviada com sucesso.");
+  carregarAlunos();
 });
 
 // =========================
@@ -489,7 +475,15 @@ btnSalvarAluno?.addEventListener("click", async () => {
 
   const { error } = await supabase
     .from("alunos")
-    .insert([{ ra, nome, ensino, turma, status }]);
+    .insert([
+      {
+        ra,
+        nome,
+        ensino,
+        turma,
+        status
+      }
+    ]);
 
   btnSalvarAluno.disabled = false;
 
@@ -526,9 +520,9 @@ toggleRA?.addEventListener("click", () => {
   toggleRA.textContent = raVisivel ? "Ocultar RA" : "Mostrar RA";
 });
 
-// =========================
-// Lazy loading de fotos
-// =========================
+//==========================
+// Carrega as fotos de forma gradual
+//==========================
 function ativarLazyLoading() {
   const imagens = document.querySelectorAll("img.lazy");
 
