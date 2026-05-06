@@ -353,7 +353,7 @@ tabelaAlunos?.addEventListener("change", async (event) => {
   formData.append("file", file);
   formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
   formData.append("public_id", ra); // usa o RA como nome do arquivo
-  formData.append("overwrite", "true");
+  //formData.append("overwrite", "true");
   formData.append("invalidate", "true");
 
   try {
