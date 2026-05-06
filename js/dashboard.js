@@ -68,10 +68,9 @@ function obterStatusNormalizado(status) {
   return (status || "").toString().trim().toLowerCase();
 }
 
-// ✅ ATUALIZADO: busca foto do Cloudinary pelo RA (com cache-busting opcional)
-function obterFotoUrl(ra, bust = false) {
-  const base = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${ra}.jpg`;
-  return bust ? `${base}?v=${Date.now()}` : base;
+// Função atual
+function obterFotoUrl(ra) {
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${ra}.jpg`;
 }
 
 function mostrarMensagem(texto) {
@@ -353,8 +352,6 @@ tabelaAlunos?.addEventListener("change", async (event) => {
   formData.append("file", file);
   formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
   formData.append("public_id", ra); // usa o RA como nome do arquivo
-  //formData.append("overwrite", "true");
-  formData.append("invalidate", "true");
 
   try {
     const response = await fetch(CLOUDINARY_UPLOAD_URL, {
