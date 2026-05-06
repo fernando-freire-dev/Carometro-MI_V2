@@ -367,13 +367,9 @@ tabelaAlunos?.addEventListener("change", async (event) => {
       return;
     }
 
-    mostrarMensagem("Foto enviada com sucesso.");
-    const imgAtualizada = tabelaAlunos.querySelector(`img[data-ra="${ra}"]`);
-    if (imgAtualizada) {
-      const novaUrl = obterFotoUrl(ra, true);
-      imgAtualizada.src = novaUrl;
-      imgAtualizada.dataset.src = novaUrl;
-    }
+    // Trecho atual
+  mostrarMensagem("Foto enviada com sucesso.");
+  setTimeout(() => carregarAlunos(), 2000);
 
   } catch (err) {
     console.error("Erro ao enviar foto:", err);
